@@ -249,3 +249,10 @@ UPDATE civicrm_custom_field cf
   WHERE cg.is_multiple = 1 AND cf.html_type != 'TextArea';
 ALTER TABLE `civicrm_custom_group`
  CHANGE COLUMN `style` `style` varchar(15) COLLATE utf8_unicode_ci DEFAULT NULL COMMENT 'Visual relationship between this form and its parent.';
+
+-- Financial account relationship
+SELECT @option_group_id_arel           := max(id) from civicrm_option_group where name = 'account_relationship';
+INSERT INTO
+   `civicrm_option_value` (`option_group_id`, {localize field='label'}label{/localize}, `value`, `name`, `grouping`, `filter`, `is_default`, `weight`, {localize field='description'}`description`{/localize}, `is_optgroup`, `is_reserved`, `is_active`, `component_id`, `visibility_id`)
+VALUES
+(@option_group_id_arel, {localize}'{ts escape="sql"}Sales Tax Account is{/ts}'{/localize}, 10, 'Sales Tax Account is', NULL, 0, 0, 10, {localize}'Sales Tax Account is'{/localize}, 0, 1, 1, 2, NULL);

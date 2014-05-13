@@ -277,12 +277,17 @@ class CRM_Price_BAO_PriceField extends CRM_Price_DAO_PriceField {
     //use value field.
     $valueFieldName = 'amount';
     $seperator = '|';
+    $taxRates = CRM_Core_PseudoConstant::getTaxRates();
     switch ($field->html_type) {
       case 'Text':
         $optionKey = key($customOption);
         $count = CRM_Utils_Array::value('count', $customOption[$optionKey], '');
         $max_value = CRM_Utils_Array::value('max_value', $customOption[$optionKey], '');
-        $priceVal = implode($seperator, array($customOption[$optionKey][$valueFieldName], $count, $max_value));
+            $vatRate = 0;
+            if (CRM_Utils_Array::value('tax_amount', $customOption[$optionKey])) {
+                $vatRate = $customOption[$optionKey]['tax_amount'];
+            }
+        $priceVal = implode($seperator, array($customOption[$optionKey][$valueFieldName] + $vatRate, $count, $max_value));
 
         $extra = array();
         if (!empty($qf->_quickConfig) && !empty($qf->_contributionAmount)) {
@@ -342,13 +347,21 @@ class CRM_Price_BAO_PriceField extends CRM_Price_DAO_PriceField {
         }
 
         foreach ($customOption as $opId => $opt) {
+          $vatRate = 0;
           if ($field->is_display_amounts) {
             $opt['label'] = !empty($opt['label']) ? $opt['label'] : '';
-            $opt['label'] = '<span class="crm-price-amount-amount">' . CRM_Utils_Money::format($opt[$valueFieldName]) . '</span> <span class="crm-price-amount-label">' . $opt['label'] . '</span>';
+            if (CRM_Utils_Array::value('tax_amount', $opt)) {
+                $vatRate = $opt['tax_amount'];
+                $opt['label'] = '<span class="crm-price-amount-amount">' . CRM_Utils_Money::format($opt[$valueFieldName] + $vatRate) . '</span> <span class="crm-price-amount-label">' . $opt['label'] . '</span>';
+                $opt['label'] .= '<span class="crm-price-amount-label"> (includes '.round($taxRates[$opt['financial_type_id']],2).'% VAT - ' . CRM_Utils_Money::format($vatRate) . ')</span>';
+            }
+            else {
+                $opt['label'] = '<span class="crm-price-amount-amount">' . CRM_Utils_Money::format($opt[$valueFieldName]) . '</span> <span class="crm-price-amount-label">' . $opt['label'] . '</span>';
+            }
           }
           $count = CRM_Utils_Array::value('count', $opt, '');
           $max_value = CRM_Utils_Array::value('max_value', $opt, '');
-          $priceVal = implode($seperator, array($opt[$valueFieldName], $count, $max_value));
+          $priceVal = implode($seperator, array($opt[$valueFieldName] + $vatRate, $count, $max_value));
           $extra = array('price' => json_encode(array($elementName, $priceVal)),
                    'data-amount' => $opt[$valueFieldName],
                    'data-currency' => $currencyName,
@@ -417,15 +430,23 @@ class CRM_Price_BAO_PriceField extends CRM_Price_DAO_PriceField {
         $selectOption = $allowedOptions = $priceVal = array();
 
         foreach ($customOption as $opt) {
+          $vatRate = 0;
           $count = CRM_Utils_Array::value('count', $opt, '');
           $max_value = CRM_Utils_Array::value('max_value', $opt, '');
-          $priceVal[$opt['id']] = implode($seperator, array($opt[$valueFieldName], $count, $max_value));
 
           if ($field->is_display_amounts) {
             $opt['label'] .= '&nbsp;-&nbsp;';
-            $opt['label'] .= CRM_Utils_Money::format($opt[$valueFieldName]);
+            if (CRM_Utils_Array::value('tax_amount', $opt)) {
+                $vatRate = $opt['tax_amount'];
+                $opt['label'] .= CRM_Utils_Money::format($opt[$valueFieldName] + $vatRate);
+                $opt['label'] .= '<span class="crm-price-amount-label"> (includes '.round($taxRates[$opt['financial_type_id']],2).'% VAT - ' . CRM_Utils_Money::format($vatRate) . ')</span>';
+            }
+            else {
+                $opt['label'] .= CRM_Utils_Money::format($opt[$valueFieldName]);
+            }
           }
           $selectOption[$opt['id']] = $opt['label'];
+          $priceVal[$opt['id']] = implode($seperator, array($opt[$valueFieldName] + $vatRate, $count, $max_value));
 
           if (!in_array($opt['id'], $feezeOptions)) {
             $allowedOptions[] = $opt['id'];
@@ -452,14 +473,22 @@ class CRM_Price_BAO_PriceField extends CRM_Price_DAO_PriceField {
 
         $check = array();
         foreach ($customOption as $opId => $opt) {
+          $vatRate = 0;
           $count = CRM_Utils_Array::value('count', $opt, '');
           $max_value = CRM_Utils_Array::value('max_value', $opt, '');
-          $priceVal = implode($seperator, array($opt[$valueFieldName], $count, $max_value));
 
           if ($field->is_display_amounts) {
             $opt['label'] .= '&nbsp;-&nbsp;';
-            $opt['label'] .= CRM_Utils_Money::format($opt[$valueFieldName]);
+            if (CRM_Utils_Array::value('tax_amount', $opt)) {
+                $vatRate = $opt['tax_amount'];
+                $opt['label'] .= CRM_Utils_Money::format($opt[$valueFieldName] + $vatRate);
+                $opt['label'] .= '<span class="crm-price-amount-label"> (includes '.round($taxRates[$opt['financial_type_id']],2).'% VAT - ' . CRM_Utils_Money::format($vatRate) . ')</span>';
+            }
+            else {
+                $opt['label'] .= CRM_Utils_Money::format($opt[$valueFieldName]);
+            }
           }
+          $priceVal = implode($seperator, array($opt[$valueFieldName] + $vatRate, $count, $max_value));
           $check[$opId] = &$qf->createElement('checkbox', $opt['id'], NULL, $opt['label'],
             array('price' => json_encode(array($opt['id'], $priceVal)),
              'data-amount' => $opt[$valueFieldName],
@@ -502,6 +531,17 @@ class CRM_Price_BAO_PriceField extends CRM_Price_DAO_PriceField {
       $values = array();
       CRM_Price_BAO_PriceFieldValue::getValues($fieldId, $values, 'weight', !$inactiveNeeded);
       $options[$fieldId] = $values;
+      $taxRates = CRM_Core_PseudoConstant::getTaxRates();
+
+      // ToDo - Code for Hook Invoke
+
+      foreach ($options[$fieldId] as $priceFieldId => $priceFieldValues) {
+        if (array_key_exists($priceFieldValues['financial_type_id'], $taxRates)) {
+          $options[$fieldId][$priceFieldId]['tax_rate'] = $taxRates[$priceFieldValues['financial_type_id']];
+          $vatDetails = self::getVatDetails($priceFieldValues['amount'], $options[$fieldId][$priceFieldId]['tax_rate']);
+          $options[$fieldId][$priceFieldId]['tax_amount'] = round($vatDetails['vat_rate'],2);
+        }
+      }
     }
 
     return $options[$fieldId];
@@ -671,6 +711,14 @@ WHERE  id IN (" . implode(',', array_keys($priceFields)) . ')';
         $error['_qf_default'] = ts('Please select at least one option from price set.');
       }
     }
+  }
+
+  public static function getVatDetails($amount, $taxRate) {
+    $vatDetails = array();
+    $vatDetails['vat_rate'] = ($taxRate/100) * $amount;
+    $totalTaxableAmount = $amount + $vatDetails['vat_rate'];
+
+    return $vatDetails;
   }
 }
 

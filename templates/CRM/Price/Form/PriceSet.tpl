@@ -65,7 +65,15 @@
                 <div class="content {$element.name}-content">{$form.$element_name.html}
                   {if $element.is_display_amounts && $element.html_type eq 'Text'}
                     <span class="price-field-amount">
-                      {foreach item=option from=$element.options}{$option.amount|crmMoney}{/foreach}
+                      {foreach item=option from=$element.options}
+		        {if $option.tax_amount}
+			  {assign var="amount" value=`$option.amount+$option.tax_amount`}
+		          {$amount|crmMoney}
+			  <span class='crm-price-amount-label'> (includes {$option.tax_rate}% VAT - {$option.tax_amount|crmMoney})</span>
+			{else}
+		          {$option.amount|crmMoney}
+			{/if}
+		      {/foreach}
                     </span>
                   {/if}
                       {if $element.help_post}<br /><span class="description">{$element.help_post}</span>{/if}

@@ -643,6 +643,7 @@ WHERE  id = %1";
   static function processAmount(&$fields, &$params, &$lineItem, $component = '') {
     // using price set
     $totalPrice = 0;
+    $totalTax = 0;
     $radioLevel = $checkboxLevel = $selectLevel = $textLevel = array();
     if ($component) {
       $autoRenew = array();
@@ -660,6 +661,14 @@ WHERE  id = %1";
         case 'Text':
           $params["price_{$id}"] = array(key($field['options']) => $params["price_{$id}"]);
           CRM_Price_BAO_LineItem::format($id, $params, $field, $lineItem);
+          if (CRM_Utils_Array::value('tax_rate', $field['options'][key($field['options'])])) {
+              $taxAmount = $field['options'][key($field['options'])]['tax_amount'] * $lineItem[key($field['options'])]['qty'];
+              $taxRate = $field['options'][key($field['options'])]['tax_rate'];
+              $lineItem[key($field['options'])]['line_total'] = $lineItem[key($field['options'])]['line_total'] + $taxAmount;
+              $lineItem[key($field['options'])]['tax_amount'] = $taxAmount;
+              $lineItem[key($field['options'])]['tax_rate'] = $taxRate;
+              $totalTax += $taxAmount;
+          }
           $totalPrice += $lineItem[key($field['options'])]['line_total'];
           break;
 
@@ -682,6 +691,14 @@ WHERE  id = %1";
             $radioLevel = array_keys($params['amount_priceset_level_radio']);
           }
           CRM_Price_BAO_LineItem::format($id, $params, $field, $lineItem);
+          if (CRM_Utils_Array::value('tax_rate', $field['options'][$optionValueId])) {
+              $taxAmount = $field['options'][$optionValueId]['tax_amount'];
+              $taxRate = $field['options'][$optionValueId]['tax_rate'];
+              $lineItem[$optionValueId]['line_total'] = $lineItem[$optionValueId]['line_total'] + $taxAmount;
+              $lineItem[$optionValueId]['tax_amount'] = $taxAmount;
+              $lineItem[$optionValueId]['tax_rate'] = $taxRate;
+              $totalTax += $taxAmount;
+          }
           $totalPrice += $lineItem[$optionValueId]['line_total'];
           if (
             $component &&
@@ -707,6 +724,15 @@ WHERE  id = %1";
             $selectLevel = array_keys($params['amount_priceset_level_select']);
           }
           CRM_Price_BAO_LineItem::format($id, $params, $field, $lineItem);
+          if (CRM_Utils_Array::value('tax_rate', $field['options'][$optionValueId])) {
+              $taxAmount = $field['options'][$optionValueId]['tax_amount'];
+              $taxRate = $field['options'][$optionValueId]['tax_rate'];
+              $lineItem[$optionValueId]['line_total'] = $lineItem[$optionValueId]['line_total'] + $taxAmount;
+              $lineItem[$optionValueId]['tax_amount'] = $taxAmount;
+              $lineItem[$optionValueId]['tax_rate'] = $taxRate;
+              $totalTax += $taxAmount;
+          }
+
           $totalPrice += $lineItem[$optionValueId]['line_total'];
           if (
             $component &&
@@ -736,6 +762,14 @@ WHERE  id = %1";
           }
           CRM_Price_BAO_LineItem::format($id, $params, $field, $lineItem);
           foreach ($optionIds as $optionId) {
+          if (CRM_Utils_Array::value('tax_rate', $field['options'][$optionId])) {
+              $taxAmount = $field['options'][$optionId]['tax_amount'];
+              $taxRate = $field['options'][$optionId]['tax_rate'];
+              $lineItem[$optionId]['line_total'] = $lineItem[$optionId]['line_total'] + $taxAmount;
+              $lineItem[$optionId]['tax_amount'] = $taxAmount;
+              $lineItem[$optionId]['tax_rate'] = $taxRate;
+              $totalTax += $taxAmount;
+          }
             $totalPrice += $lineItem[$optionId]['line_total'];
             if (
               $component &&
@@ -768,6 +802,7 @@ WHERE  id = %1";
     }
     $params['amount_level'] = CRM_Core_DAO::VALUE_SEPARATOR . implode(CRM_Core_DAO::VALUE_SEPARATOR, $amount_level) . $displayParticipantCount . CRM_Core_DAO::VALUE_SEPARATOR;
     $params['amount'] = $totalPrice;
+    $params['tax_amount'] = $totalTax;
     if ($component) {
       foreach ($autoRenew as $dontCare => $eachAmount) {
         if (!$eachAmount) {

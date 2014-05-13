@@ -1169,6 +1169,9 @@ class CRM_Contribute_Form_Contribution_Main extends CRM_Contribute_Form_Contribu
             $fieldId     = $fieldVal['id'];
             $fieldOption = $params['price_' . $fieldId];
             $proceFieldAmount += $fieldVal['options'][$this->_submitValues['price_' . $fieldId]]['amount'];
+            if (isset($fieldVal['options'][$this->_submitValues['price_' . $fieldId]]['tax_amount'])) {
+              $proceFieldAmount += $fieldVal['options'][$this->_submitValues['price_' . $fieldId]]['tax_amount'];
+            }
             $memPresent  = TRUE;
           }
           else {
@@ -1179,6 +1182,9 @@ class CRM_Contribute_Form_Contribution_Main extends CRM_Contribute_Form_Contribu
               }
               elseif ($fieldVal['name'] == 'contribution_amount' && $this->_submitValues['price_' . $fieldId] > 0) {
                 $proceFieldAmount += $fieldVal['options'][$this->_submitValues['price_' . $fieldId]]['amount'];
+              }
+              if (isset($fieldVal['options'][$this->_submitValues['price_' . $fieldId]]['tax_amount'])) {
+                $proceFieldAmount += $fieldVal['options'][$this->_submitValues['price_' . $fieldId]]['tax_amount'];
               }
               unset($params['price_' . $fieldId]);
               break;
@@ -1213,6 +1219,9 @@ class CRM_Contribute_Form_Contribution_Main extends CRM_Contribute_Form_Contribu
         $component = 'membership';
       }
       CRM_Price_BAO_PriceSet::processAmount($this->_values['fee'], $params, $lineItem[$priceSetId], $component);
+      if ($params['tax_amount']) {
+        $this->set('tax_amount', $params['tax_amount']);
+      }
 
       if ($proceFieldAmount) {
         $lineItem[$params['priceSetId']][$fieldOption]['line_total'] = $proceFieldAmount;

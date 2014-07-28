@@ -675,7 +675,7 @@ WHERE  id = %1";
             $lineItem = self::setLineItem($field, $lineItem, key($field['options']));
             $totalTax += $field['options'][key($field['options'])]['tax_amount'] * $lineItem[key($field['options'])]['qty'];
           }
-          $totalPrice += $lineItem[key($field['options'])]['line_total'];
+          $totalPrice += $lineItem[key($field['options'])]['line_total'] + CRM_Utils_Array::value('tax_amount', $lineItem[key($field['options'])]);
           break;
 
         case 'Radio':
@@ -701,7 +701,7 @@ WHERE  id = %1";
             $lineItem = self::setLineItem($field, $lineItem, $optionValueId);
             $totalTax += $field['options'][$optionValueId]['tax_amount'];
           }
-          $totalPrice += $lineItem[$optionValueId]['line_total'];
+          $totalPrice += $lineItem[$optionValueId]['line_total'] + CRM_Utils_Array::value('tax_amount', $lineItem[$optionValueId]);
           if (
             $component &&
             // auto_renew exists and is empty in some workflows, which php treat as a 0
@@ -730,7 +730,7 @@ WHERE  id = %1";
             $lineItem = self::setLineItem($field, $lineItem, $optionValueId);
             $totalTax += $field['options'][$optionValueId]['tax_amount'];
           }
-          $totalPrice += $lineItem[$optionValueId]['line_total'];
+          $totalPrice += $lineItem[$optionValueId]['line_total'] + CRM_Utils_Array::value('tax_amount', $lineItem[$optionValueId]);
           if (
             $component &&
             isset($lineItem[$optionValueId]['auto_renew']) &&
@@ -763,7 +763,7 @@ WHERE  id = %1";
               $lineItem = self::setLineItem($field, $lineItem, $optionId);
               $totalTax += $field['options'][$optionId]['tax_amount'];
             }
-            $totalPrice += $lineItem[$optionId]['line_total'];
+            $totalPrice += $lineItem[$optionId]['line_total'] + CRM_Utils_Array::value('tax_amount', $lineItem[$optionId]);
             if (
               $component &&
               isset($lineItem[$optionId]['auto_renew']) &&
@@ -1288,7 +1288,7 @@ WHERE       ps.id = %1
       $taxAmount = $field['options'][$optionValueId]['tax_amount'];
     }
     $taxRate = $field['options'][$optionValueId]['tax_rate'];
-    $lineItem[$optionValueId]['line_total'] = $lineItem[$optionValueId]['line_total'] + $taxAmount;
+    $lineItem[$optionValueId]['line_total'] = $lineItem[$optionValueId]['line_total'];
     $lineItem[$optionValueId]['tax_amount'] = $taxAmount;
     $lineItem[$optionValueId]['tax_rate'] = $taxRate;
 

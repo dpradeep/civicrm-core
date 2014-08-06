@@ -2956,12 +2956,12 @@ WHERE  contribution_id = %1 ";
 
           if ($fieldValues['tax_amount']) {
             $itemParams['amount'] = $diff * $fieldValues['tax_amount'];
-            $itemParams['description'] = 'VAT';
+            $itemParams['description'] = ts('VAT');
             $accountRel = key(CRM_Core_PseudoConstant::accountOptionValues('account_relationship', NULL, " AND v.name LIKE 'Sales Tax Account is' "));
             if ($fieldValues['financial_type_id']) {
               $searchParams = array(
-                'entity_table'         => 'civicrm_financial_type',
-                'entity_id'            => $fieldValues['financial_type_id'],
+                'entity_table' => 'civicrm_financial_type',
+                'entity_id' => $fieldValues['financial_type_id'],
                 'account_relationship' => $accountRel,
               );
 

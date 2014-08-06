@@ -700,6 +700,9 @@ WHERE  id = %1";
           if (CRM_Utils_Array::value('tax_rate', $field['options'][$optionValueId])) {
             $lineItem = self::setLineItem($field, $lineItem, $optionValueId);
             $totalTax += $field['options'][$optionValueId]['tax_amount'];
+            if (CRM_Utils_Array::value('field_title', $lineItem[$optionValueId]) == 'Membership Amount') {
+              $lineItem[$optionValueId]['line_total'] = $lineItem[$optionValueId]['unit_price'] = CRM_Utils_Rule::cleanMoney($lineItem[$optionValueId]['line_total'] - $lineItem[$optionValueId]['tax_amount']);
+            }
           }
           $totalPrice += $lineItem[$optionValueId]['line_total'] + CRM_Utils_Array::value('tax_amount', $lineItem[$optionValueId]);
           if (
@@ -1288,7 +1291,6 @@ WHERE       ps.id = %1
       $taxAmount = $field['options'][$optionValueId]['tax_amount'];
     }
     $taxRate = $field['options'][$optionValueId]['tax_rate'];
-    $lineItem[$optionValueId]['line_total'] = $lineItem[$optionValueId]['line_total'];
     $lineItem[$optionValueId]['tax_amount'] = $taxAmount;
     $lineItem[$optionValueId]['tax_rate'] = $taxRate;
 
